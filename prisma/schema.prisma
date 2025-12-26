@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String              @id
+  email             String              @unique
+  username          String?             @unique
+  imageUrl          String?
+  role              Role                @default(USER)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  createdRooms      CollaborationRoom[] @relation("RoomCreator")
+  participatedRooms RoomParticipant[]
+  submissions       Submission[]
+
+  @@map("users")
+}
+
+model Problem {
+  id          String              @id @default(cuid())
+  title       String
+  slug        String              @unique
+  description String
+  difficulty  Difficulty
+  testCases   Json
+  starterCode Json
+  solution    Json?
+  constraints String[]            @default([])
+  hints       String[]            @default([])
+  isPublished Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  rooms       CollaborationRoom[]
+  submissions Submission[]
+
+  @@map("problems")
+}
+
+model CollaborationRoom {
+  id           String            @id @default(cuid())
+  name         String
+  code         String            @unique
+  isActive     Boolean           @default(true)
+  currentCode  String?
+  language     String            @default("javascript")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  expiresAt    DateTime?
+  creatorId    String
+  problemId    String?
+  creator      User              @relation("RoomCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  problem      Problem?          @relation(fields: [problemId], references: [id])
+  participants RoomParticipant[]
+  submissions  Submission[]
+
+  @@index([code])
+  @@index([creatorId])
+  @@map("collaboration_rooms")
+}
+
+model RoomParticipant {
+  id             String            @id @default(cuid())
+  joinedAt       DateTime          @default(now())
+  leftAt         DateTime?
+  cursorPosition Json?
+  userId         String
+  roomId         String
+  room           CollaborationRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roomId])
+  @@index([roomId])
+  @@map("room_participants")
+}
+
+model Submission {
+  id        String             @id @default(cuid())
+  code      String
+  language  String
+  status    SubmissionStatus   @default(PENDING)
+  result    Json?
+  runtime   Int?
+  memory    Int?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  userId    String
+  problemId String
+  roomId    String?
+  problem   Problem            @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  room      CollaborationRoom? @relation(fields: [roomId], references: [id])
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([problemId])
+  @@index([status])
+  @@map("submissions")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum SubmissionStatus {
+  PENDING
+  RUNNING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILATION_ERROR
+}
