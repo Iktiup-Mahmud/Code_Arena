@@ -43,6 +43,9 @@ interface Room {
   problemTitle: string | null;
   participantCount: number;
   isCreator: boolean;
+  isJoined: boolean;
+  creatorName: string;
+  creatorEmail: string;
 }
 
 interface Problem {
@@ -63,11 +66,15 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
   const [isJoining, setIsJoining] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Create room form state
   const [roomName, setRoomName] = useState("");
   const [roomLanguage, setRoomLanguage] = useState("javascript");
-  const [selectedProblemId, setSelectedProblemId] = useState<string | undefined>(undefined);
+  const [selectedProblemId, setSelectedProblemId] = useState<
+    string | undefined
+  >(undefined);
+  const [createError, setCreateError] = useState("");
 
   // Join room form state
   const [joinCode, setJoinCode] = useState("");
@@ -77,6 +84,7 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
     if (!roomName.trim()) return;
 
     setIsCreating(true);
+    setCreateError("");
     try {
       const room = await createRoom({
         name: roomName,
@@ -84,9 +92,13 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
         problemId: selectedProblemId,
       });
       setCreateDialogOpen(false);
+      setRoomName("");
+      setCreateError("");
       router.push(`/playground/${room.code}`);
     } catch (error) {
-      console.error("Failed to create room:", error);
+      setCreateError(
+        error instanceof Error ? error.message : "Failed to create room"
+      );
     } finally {
       setIsCreating(false);
     }
@@ -110,9 +122,51 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
     }
   };
 
-  const handleEnterRoom = (code: string) => {
+  const handleEnterRoom = async (code: string, isJoined: boolean) => {
+    if (!isJoined) {
+      // If not already joined, join the room first
+      try {
+        await joinRoom(code);
+      } catch (error) {
+        console.error("Failed to join room:", error);
+        return;
+      }
+    }
     router.push(`/playground/${code}`);
   };
+
+  // Filter rooms by search query
+  const filteredRooms = rooms.filter((room) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      room.name.toLowerCase().includes(query) ||
+      room.creatorName.toLowerCase().includes(query) ||
+      room.creatorEmail.toLowerCase().includes(query)
+    );
+  });
+
+  // Group rooms by creator
+  const groupedRooms = filteredRooms.reduce((acc, room) => {
+    const creator = room.creatorEmail;
+    if (!acc[creator]) {
+      acc[creator] = {
+        creatorName: room.creatorName,
+        creatorEmail: room.creatorEmail,
+        rooms: [],
+      };
+    }
+    acc[creator].rooms.push(room);
+    return acc;
+  }, {} as Record<string, { creatorName: string; creatorEmail: string; rooms: Room[] }>);
+
+  const creatorGroups = Object.values(groupedRooms).sort((a, b) => {
+    // Sort: current user's rooms first, then by creator name
+    const aIsCurrentUser = a.rooms.some((r) => r.isCreator);
+    const bIsCurrentUser = b.rooms.some((r) => r.isCreator);
+    if (aIsCurrentUser && !bIsCurrentUser) return -1;
+    if (!aIsCurrentUser && bIsCurrentUser) return 1;
+    return a.creatorName.localeCompare(b.creatorName);
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -126,7 +180,13 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
             <span className="text-xl font-bold text-white">CodeArena</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            <Input
+              placeholder="Search rooms or creators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-64 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+            />
             <span className="text-sm text-slate-400">Welcome, {userName}</span>
           </div>
         </div>
@@ -176,9 +236,15 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
                     id="room-name"
                     placeholder="e.g., LeetCode Practice"
                     value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
+                    onChange={(e) => {
+                      setRoomName(e.target.value);
+                      setCreateError("");
+                    }}
                     className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
                   />
+                  {createError && (
+                    <p className="text-sm text-rose-400">{createError}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -196,7 +262,9 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
                   <select
                     id="problem-select"
                     value={selectedProblemId || ""}
-                    onChange={(e) => setSelectedProblemId(e.target.value || undefined)}
+                    onChange={(e) =>
+                      setSelectedProblemId(e.target.value || undefined)
+                    }
                     className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">Sandbox Mode (No Problem)</option>
@@ -300,20 +368,28 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
         </div>
 
         {/* Rooms List */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-white">Your Rooms</h2>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">
+              Available Rooms
+            </h2>
+            <span className="text-sm text-slate-400">
+              {filteredRooms.length}{" "}
+              {filteredRooms.length === 1 ? "room" : "rooms"}
+            </span>
+          </div>
 
-          {rooms.length === 0 ? (
+          {filteredRooms.length === 0 && rooms.length === 0 ? (
             <Card className="border-slate-800 bg-slate-900/50">
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="mb-4 rounded-full bg-slate-800 p-4">
                   <Code2 className="h-8 w-8 text-slate-500" />
                 </div>
                 <h3 className="mb-2 text-lg font-medium text-white">
-                  No rooms yet
+                  No active rooms
                 </h3>
                 <p className="mb-4 text-sm text-slate-400">
-                  Create your first room to start coding with others
+                  Create a room or join one using a room code
                 </p>
                 <Button
                   onClick={() => setCreateDialogOpen(true)}
@@ -324,50 +400,92 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
                 </Button>
               </CardContent>
             </Card>
+          ) : filteredRooms.length === 0 ? (
+            <Card className="border-slate-800 bg-slate-900/50">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <h3 className="mb-2 text-lg font-medium text-white">
+                  No rooms found
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Try adjusting your search query
+                </p>
+              </CardContent>
+            </Card>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {rooms.map((room) => (
-                <Card
-                  key={room.id}
-                  className="group cursor-pointer border-slate-800 bg-slate-900/50 transition-all hover:border-emerald-500/50 hover:bg-slate-900"
-                  onClick={() => handleEnterRoom(room.code)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg text-white">
-                        {room.name}
-                      </CardTitle>
-                      {room.isCreator && (
-                        <Badge
-                          variant="outline"
-                          className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs"
-                        >
-                          Owner
-                        </Badge>
-                      )}
-                    </div>
-                    <CardDescription className="text-slate-500">
-                      {room.problemTitle || "Sandbox Mode"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-sm text-slate-400">
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          {room.participantCount}
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className="border-slate-700 text-slate-400 font-mono text-xs"
-                        >
-                          {room.language}
-                        </Badge>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-emerald-400" />
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="space-y-6">
+              {creatorGroups.map((group) => (
+                <div key={group.creatorEmail} className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-slate-400">
+                      {group.rooms.some((r) => r.isCreator)
+                        ? "Your Rooms"
+                        : `${group.creatorName}'s Rooms`}
+                    </h3>
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-slate-700 text-slate-500"
+                    >
+                      {group.rooms.length}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {group.rooms.map((room) => (
+                      <Card
+                        key={room.id}
+                        className="group cursor-pointer border-slate-800 bg-slate-900/50 transition-all hover:border-emerald-500/50 hover:bg-slate-900"
+                        onClick={() =>
+                          handleEnterRoom(room.code, room.isJoined)
+                        }
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <CardTitle className="text-lg text-white">
+                              {room.name}
+                            </CardTitle>
+                            <div className="flex gap-2">
+                              {room.isCreator && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs"
+                                >
+                                  Owner
+                                </Badge>
+                              )}
+                              {!room.isJoined && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs"
+                                >
+                                  Join
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <CardDescription className="text-slate-500">
+                            {room.problemTitle || "Sandbox Mode"}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4 text-sm text-slate-400">
+                              <div className="flex items-center gap-1">
+                                <Users className="h-4 w-4" />
+                                {room.participantCount}
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className="border-slate-700 text-slate-400 font-mono text-xs"
+                              >
+                                {room.language}
+                              </Badge>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-emerald-400" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -376,4 +494,3 @@ export function RoomsClient({ rooms, problems, userName }: RoomsClientProps) {
     </div>
   );
 }
-

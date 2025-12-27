@@ -28,6 +28,14 @@ export default async function RoomsPage() {
         problemTitle: room.problem?.title || null,
         participantCount: room.participants.length,
         isCreator: room.creatorId === userId,
+        isJoined:
+          room.creatorId === userId ||
+          room.participants.some((p) => p.userId === userId),
+        creatorName:
+          room.creator.username ||
+          room.creator.email.split("@")[0] ||
+          "Unknown",
+        creatorEmail: room.creator.email,
       }))}
       problems={problems.map((p) => ({
         id: p.id,
@@ -38,4 +46,3 @@ export default async function RoomsPage() {
     />
   );
 }
-

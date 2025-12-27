@@ -2,7 +2,10 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { RoomProvider, useRoom } from "@/components/collaboration/room-provider";
+import {
+  RoomProvider,
+  useRoom,
+} from "@/components/collaboration/room-provider";
 import { CollaborativeEditor } from "@/components/editor/collaborative-editor";
 import { ProblemPanel } from "@/components/playground/problem-panel";
 import { LanguageSelector } from "@/components/playground/language-selector";
@@ -16,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { leaveRoom } from "@/lib/actions/rooms";
+import { leaveRoom, updateRoomProblem, updateRoomCode } from "@/lib/actions/rooms";
 import { createSubmission, runCode } from "@/lib/actions/submissions";
 import {
   Play,
@@ -31,6 +34,7 @@ import {
   PanelLeft,
   PanelBottomClose,
   PanelBottom,
+  BookOpen,
 } from "lucide-react";
 
 interface Problem {
@@ -66,6 +70,12 @@ interface User {
 interface PlaygroundClientProps {
   room: Room;
   problem: Problem | null;
+  problems: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    difficulty: "EASY" | "MEDIUM" | "HARD";
+  }>;
   user: User;
 }
 
@@ -99,7 +109,12 @@ interface RunResult {
 }
 
 // Inner component that uses the room context
-function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
+function PlaygroundInner({
+  room,
+  problem,
+  problems,
+  user,
+}: PlaygroundClientProps) {
   const router = useRouter();
   const { doc, awareness, isConnected, setCurrentUser } = useRoom();
   const [language, setLanguage] = useState(room.language);
@@ -109,20 +124,50 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
   const [showProblemPanel, setShowProblemPanel] = useState(true);
   const [showOutputPanel, setShowOutputPanel] = useState(true);
   const [customInput, setCustomInput] = useState("");
-  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
+  const [submissionResult, setSubmissionResult] =
+    useState<SubmissionResult | null>(null);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
-  
+  const [isChangingProblem, setIsChangingProblem] = useState(false);
+
   // Ref to get current code from editor
   const currentCodeRef = useRef<string>("");
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedCodeRef = useRef<string>("");
 
   // Set current user in room context
   useEffect(() => {
     setCurrentUser({
       id: user.id,
       name: user.name,
-      color: `hsl(${user.id.charCodeAt(0) * 137.5 % 360}, 70%, 60%)`,
+      color: `hsl(${(user.id.charCodeAt(0) * 137.5) % 360}, 70%, 60%)`,
     });
   }, [user, setCurrentUser]);
+
+  // Debounced save to database
+  const saveCodeToDatabase = useCallback(
+    async (code: string) => {
+      if (code === lastSavedCodeRef.current) return;
+      
+      try {
+        await updateRoomCode(room.id, code);
+        lastSavedCodeRef.current = code;
+        console.log("[Playground] Code saved to database");
+      } catch (error) {
+        console.error("[Playground] Failed to save code:", error);
+      }
+    },
+    [room.id]
+  );
+
+  // Auto-save code changes with debouncing
+  useEffect(() => {
+    return () => {
+      // Save on unmount
+      if (currentCodeRef.current && currentCodeRef.current !== lastSavedCodeRef.current) {
+        saveCodeToDatabase(currentCodeRef.current);
+      }
+    };
+  }, [saveCodeToDatabase]);
 
   // Get starter code for current language
   const getStarterCode = useCallback(() => {
@@ -142,9 +187,33 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
     router.push("/rooms");
   };
 
+  const handleProblemChange = async (problemId: string) => {
+    if (problemId === (problem?.id || "")) return;
+
+    setIsChangingProblem(true);
+    try {
+      await updateRoomProblem(room.id, problemId || null);
+      // Refresh the page to load new problem
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to change problem:", error);
+    } finally {
+      setIsChangingProblem(false);
+    }
+  };
+
   const handleCodeChange = useCallback((code: string) => {
     currentCodeRef.current = code;
-  }, []);
+    
+    // Debounce save to database (save after 2 seconds of no changes)
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      saveCodeToDatabase(code);
+    }, 2000);
+  }, [saveCodeToDatabase]);
 
   // Run code against custom input
   const handleRun = async () => {
@@ -221,12 +290,12 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-slate-900">
+    <div className="flex h-screen flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Header */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800 px-4">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-700/50 bg-slate-900/90 backdrop-blur-sm px-4 shadow-lg">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold text-white">{room.name}</h1>
-          
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -236,7 +305,10 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
                   onClick={handleCopyCode}
                   className="flex items-center gap-2 text-slate-400 hover:text-white"
                 >
-                  <Badge variant="outline" className="font-mono text-xs border-slate-700">
+                  <Badge
+                    variant="outline"
+                    className="font-mono text-white text-xs border-slate-600/50 bg-slate-800/50"
+                  >
                     {room.code}
                   </Badge>
                   {copied ? (
@@ -252,13 +324,31 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
             </Tooltip>
           </TooltipProvider>
 
-          <div className="flex items-center gap-2">
+          {/* Problem Selector */}
+          <div className="flex items-center gap-2 rounded-lg border border-slate-700/50 bg-slate-800/80 px-3 py-1.5">
+            <BookOpen className="h-4 w-4 text-emerald-400" />
+            <select
+              value={problem?.id || ""}
+              onChange={(e) => handleProblemChange(e.target.value)}
+              disabled={isChangingProblem}
+              className="bg-transparent text-sm text-white focus:outline-none cursor-pointer"
+            >
+              <option value="">Sandbox Mode</option>
+              {problems.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title} ({p.difficulty})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-lg border border-slate-700/30 bg-slate-800/50 px-3 py-1.5">
             {isConnected ? (
               <Wifi className="h-4 w-4 text-emerald-400" />
             ) : (
               <WifiOff className="h-4 w-4 text-rose-400" />
             )}
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-400">
               {isConnected ? "Connected" : "Reconnecting..."}
             </span>
           </div>
@@ -274,7 +364,7 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
               variant="outline"
               onClick={handleRun}
               disabled={isRunning}
-              className="border-slate-700 bg-slate-800 hover:bg-slate-700"
+              className="border-slate-600/50 bg-slate-800/80 hover:bg-slate-700/80 hover:border-slate-500 text-white"
             >
               {isRunning ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -287,7 +377,7 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting || !problem}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all"
             >
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -322,7 +412,7 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* Problem Panel */}
         {showProblemPanel && (
-          <div className="w-[400px] shrink-0 border-r border-slate-800 bg-slate-900/50">
+          <div className="w-[400px] shrink-0 border-r border-slate-700/50 bg-slate-900/70 backdrop-blur-sm">
             <ProblemPanel problem={problem} />
           </div>
         )}
@@ -330,7 +420,7 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
         {/* Editor + Output Panel */}
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Editor Toolbar */}
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-slate-800 px-2">
+          <div className="flex h-10 shrink-0 items-center justify-between border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm px-2">
             <div className="flex items-center gap-2">
               <TooltipProvider>
                 <Tooltip>
@@ -383,7 +473,7 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
           </div>
 
           {/* Editor */}
-          <div className={`${showOutputPanel ? "flex-1" : "flex-1"} p-2 overflow-hidden`}>
+          <div className="flex-1 p-2 overflow-hidden bg-[#0d1117]">
             <CollaborativeEditor
               doc={doc}
               awareness={awareness}
@@ -397,7 +487,7 @@ function PlaygroundInner({ room, problem, user }: PlaygroundClientProps) {
 
           {/* Output Panel */}
           {showOutputPanel && (
-            <div className="h-[250px] shrink-0 border-t border-slate-800">
+            <div className="h-64 shrink-0 border-t border-slate-700/50 bg-slate-900/50 backdrop-blur-sm shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
               <SubmissionPanel
                 submissionResult={submissionResult}
                 runResult={runResult}

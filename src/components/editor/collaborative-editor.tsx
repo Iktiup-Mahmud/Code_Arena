@@ -31,6 +31,7 @@ export interface CollaborativeEditorProps {
   defaultValue?: string;
   onChange?: (value: string) => void;
   readOnly?: boolean;
+  isSynced?: boolean; // Add this to know if provider has synced
 }
 
 export function CollaborativeEditor({
@@ -43,6 +44,7 @@ export function CollaborativeEditor({
   defaultValue = "",
   onChange,
   readOnly = false,
+  isSynced = false,
 }: CollaborativeEditorProps) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
@@ -72,9 +74,28 @@ export function CollaborativeEditor({
       // Get or create the shared text type
       const yText = doc.getText("monaco");
 
-      // Initialize with default value if the doc is empty
-      if (yText.length === 0 && defaultValue) {
-        yText.insert(0, defaultValue);
+      // Smart initialization: wait for sync if we expect there to be content
+      const checkAndInitialize = () => {
+        const hasContent = yText.length > 0;
+        const shouldInitialize = !hasContent && defaultValue;
+
+        if (shouldInitialize) {
+          console.log("[CollaborativeEditor] Initializing with default value (length:", defaultValue.length, ")");
+          yText.insert(0, defaultValue);
+        } else if (hasContent) {
+          console.log("[CollaborativeEditor] Using existing Y.js content, length:", yText.length);
+        } else {
+          console.log("[CollaborativeEditor] Document is empty, no default value provided");
+        }
+      };
+
+      // If synced, initialize immediately; otherwise wait for sync
+      if (isSynced || !defaultValue) {
+        checkAndInitialize();
+      } else {
+        // Wait up to 1 second for sync before initializing with default
+        console.log("[CollaborativeEditor] Waiting for sync before initialization...");
+        setTimeout(checkAndInitialize, 1000);
       }
 
       // Create Monaco binding

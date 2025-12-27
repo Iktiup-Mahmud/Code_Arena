@@ -50,7 +50,7 @@ export function ProblemPanel({ problem }: ProblemPanelProps) {
   return (
     <div className="flex h-full flex-col">
       <Tabs defaultValue="description" className="flex h-full flex-col">
-        <TabsList className="mx-4 mt-4 grid w-auto grid-cols-3 bg-slate-800/50">
+        <TabsList className="mx-4 mt-4 grid w-auto grid-cols-3 bg-slate-800/80 border border-slate-700/50">
           <TabsTrigger value="description" className="text-xs">
             Description
           </TabsTrigger>
@@ -67,7 +67,9 @@ export function ProblemPanel({ problem }: ProblemPanelProps) {
             <div className="space-y-4">
               {/* Title and Difficulty */}
               <div className="flex items-start justify-between gap-4">
-                <h2 className="text-xl font-bold text-white">{problem.title}</h2>
+                <h2 className="text-xl font-bold text-white">
+                  {problem.title}
+                </h2>
                 <Badge
                   variant="outline"
                   className={difficultyColors[problem.difficulty]}
@@ -76,21 +78,23 @@ export function ProblemPanel({ problem }: ProblemPanelProps) {
                 </Badge>
               </div>
 
-              <Separator className="bg-slate-700" />
+              <Separator className="bg-slate-700/50" />
 
               {/* Description */}
               <div
-                className="prose prose-invert prose-sm max-w-none"
+                className="prose text-white prose-invert prose-sm max-w-none prose-headings:text-slate-200 prose-p:text-slate-300 prose-strong:text-slate-200 prose-code:text-emerald-400 prose-code:bg-slate-800/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded"
                 dangerouslySetInnerHTML={{ __html: problem.description }}
               />
 
               {/* Constraints */}
               {problem.constraints.length > 0 && (
                 <>
-                  <Separator className="bg-slate-700" />
+                  <Separator className="bg-slate-700/50" />
                   <div>
-                    <h3 className="mb-2 font-semibold text-white">Constraints</h3>
-                    <ul className="list-inside list-disc space-y-1 text-sm text-slate-400">
+                    <h3 className="mb-2 font-semibold text-slate-200">
+                      Constraints
+                    </h3>
+                    <ul className="list-inside list-disc space-y-1 text-sm text-slate-300">
                       {problem.constraints.map((constraint, i) => (
                         <li key={i}>{constraint}</li>
                       ))}
@@ -106,29 +110,32 @@ export function ProblemPanel({ problem }: ProblemPanelProps) {
           <ScrollArea className="h-full px-4 pb-4">
             <div className="space-y-4">
               {visibleTestCases.length === 0 ? (
-                <p className="text-sm text-slate-500">No visible test cases</p>
+                <p className="text-sm text-slate-400">No visible test cases</p>
               ) : (
                 visibleTestCases.map((testCase, index) => (
-                  <Card key={index} className="bg-slate-800/50 border-slate-700">
+                  <Card
+                    key={index}
+                    className="bg-slate-800/80 border-slate-600/50 shadow-lg"
+                  >
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-slate-300">
+                      <CardTitle className="text-sm font-medium text-slate-200">
                         Case {index + 1}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <p className="mb-1 text-xs font-medium text-slate-500">
+                        <p className="mb-1 text-xs font-medium text-slate-400">
                           Input
                         </p>
-                        <pre className="rounded bg-slate-900 p-2 text-xs text-slate-300 overflow-x-auto">
+                        <pre className="rounded bg-slate-950/50 p-3 text-xs text-slate-200 overflow-x-auto border border-slate-700/30">
                           {testCase.input}
                         </pre>
                       </div>
                       <div>
-                        <p className="mb-1 text-xs font-medium text-slate-500">
+                        <p className="mb-1 text-xs font-medium text-slate-400">
                           Expected Output
                         </p>
-                        <pre className="rounded bg-slate-900 p-2 text-xs text-emerald-400 overflow-x-auto">
+                        <pre className="rounded bg-slate-950/50 p-3 text-xs text-emerald-400 overflow-x-auto border border-emerald-500/20">
                           {testCase.expectedOutput}
                         </pre>
                       </div>
@@ -144,16 +151,19 @@ export function ProblemPanel({ problem }: ProblemPanelProps) {
           <ScrollArea className="h-full px-4 pb-4">
             <div className="space-y-3">
               {problem.hints.length === 0 ? (
-                <p className="text-sm text-slate-500">No hints available</p>
+                <p className="text-sm text-slate-400">No hints available</p>
               ) : (
                 problem.hints.map((hint, index) => (
-                  <Card key={index} className="bg-slate-800/50 border-slate-700">
+                  <Card
+                    key={index}
+                    className="bg-slate-800/80 border-slate-600/50 shadow-lg"
+                  >
                     <CardContent className="pt-4">
                       <div className="flex gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs font-medium text-amber-400">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/30 text-xs font-medium text-amber-300 border border-amber-500/30">
                           {index + 1}
                         </span>
-                        <p className="text-sm text-slate-300">{hint}</p>
+                        <p className="text-sm text-slate-200">{hint}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -166,4 +176,3 @@ export function ProblemPanel({ problem }: ProblemPanelProps) {
     </div>
   );
 }
-

@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { getRoomByCode } from "@/lib/actions/rooms";
+import { getProblems } from "@/lib/actions/problems";
 import { PlaygroundClient } from "./playground-client";
 
 interface PlaygroundPageProps {
@@ -16,7 +17,10 @@ export default async function PlaygroundPage({ params }: PlaygroundPageProps) {
   }
 
   const user = await currentUser();
-  const room = await getRoomByCode(roomCode);
+  const [room, problems] = await Promise.all([
+    getRoomByCode(roomCode),
+    getProblems({ publishedOnly: true }),
+  ]);
 
   if (!room) {
     notFound();
@@ -55,6 +59,12 @@ export default async function PlaygroundPage({ params }: PlaygroundPageProps) {
         currentCode: room.currentCode,
       }}
       problem={problemData}
+      problems={problems.map((p) => ({
+        id: p.id,
+        title: p.title,
+        slug: p.slug,
+        difficulty: p.difficulty,
+      }))}
       user={{
         id: userId,
         name: user?.firstName || user?.username || "Anonymous",
@@ -63,4 +73,3 @@ export default async function PlaygroundPage({ params }: PlaygroundPageProps) {
     />
   );
 }
-

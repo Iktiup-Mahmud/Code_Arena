@@ -46,6 +46,21 @@ export async function createRoom(data: {
 }) {
   const userId = await ensureUserExists();
 
+  // Check if user already has a room with this name
+  const existingRoom = await prisma.collaborationRoom.findFirst({
+    where: {
+      creatorId: userId,
+      name: data.name,
+      isActive: true,
+    },
+  });
+
+  if (existingRoom) {
+    throw new Error(
+      "You already have a room with this name. Please choose a different name."
+    );
+  }
+
   const room = await prisma.collaborationRoom.create({
     data: {
       name: data.name,
@@ -227,6 +242,23 @@ export async function updateRoomCode(roomId: string, code: string) {
       updatedAt: new Date(),
     },
   });
+}
+
+export async function updateRoomProblem(
+  roomId: string,
+  problemId: string | null
+) {
+  await ensureUserExists();
+
+  await prisma.collaborationRoom.update({
+    where: { id: roomId },
+    data: {
+      problemId: problemId,
+      updatedAt: new Date(),
+    },
+  });
+
+  revalidatePath("/playground/[roomCode]", "page");
 }
 
 export async function closeRoom(roomId: string) {

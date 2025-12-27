@@ -12,8 +12,25 @@ export function getPusherClient(): PusherClient {
       {
         cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
         authEndpoint: "/api/pusher/auth",
+        // Enable client events for real-time collaboration
+        channelAuthorization: {
+          endpoint: "/api/pusher/auth",
+        },
       }
     );
+
+    // Add connection event listeners for debugging
+    pusherClientInstance.connection.bind("connected", () => {
+      console.log("[Pusher] Connected successfully");
+    });
+
+    pusherClientInstance.connection.bind("disconnected", () => {
+      console.log("[Pusher] Disconnected");
+    });
+
+    pusherClientInstance.connection.bind("error", (err: any) => {
+      console.error("[Pusher] Connection error:", err);
+    });
   }
   return pusherClientInstance;
 }
@@ -27,4 +44,3 @@ export function disconnectPusher(): void {
 }
 
 export default getPusherClient;
-

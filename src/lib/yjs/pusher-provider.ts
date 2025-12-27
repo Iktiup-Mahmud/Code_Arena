@@ -39,35 +39,65 @@ export class PusherProvider {
 
   private connect() {
     const channelName = `presence-room-${this.roomId}`;
+    console.log(`[PusherProvider] Connecting to channel: ${channelName}`);
+
     this.channel = this.pusher.subscribe(channelName) as PresenceChannel;
 
-    this.channel.bind("pusher:subscription_succeeded", () => {
+    this.channel.bind("pusher:subscription_succeeded", (members: any) => {
+      console.log(
+        "[PusherProvider] Subscription succeeded. Members:",
+        members.count
+      );
       this.connected = true;
+      // Request sync from existing members
       this.requestSync();
+      // Broadcast our awareness state
+      this.broadcastAwarenessState();
     });
 
-    this.channel.bind("pusher:member_added", () => {
-      // When a new member joins, send them our current state
+    this.channel.bind("pusher:subscription_error", (status: any) => {
+      console.error("[PusherProvider] Subscription error:", status);
+    });
+
+    this.channel.bind("pusher:member_added", (member: any) => {
+      console.log("[PusherProvider] Member added:", member.id);
+      // Send our current state to new member
       this.broadcastState();
     });
 
     this.channel.bind("pusher:member_removed", (member: { id: string }) => {
+      console.log("[PusherProvider] Member removed:", member.id);
       // Remove awareness state for disconnected user
       const states = this.awareness.getStates();
-      states.forEach((state) => {
+      states.forEach((state, clientId) => {
         if (state.user?.id === member.id) {
-          this.awareness.setLocalStateField("user", null);
+          // Remove awareness for that client
+          const encoder = encoding.createEncoder();
+          encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
+          encoding.writeVarUint8Array(
+            encoder,
+            awarenessProtocol.encodeAwarenessUpdate(
+              this.awareness,
+              [clientId],
+              []
+            )
+          );
         }
       });
     });
 
     // Listen for sync messages
     this.channel.bind("client-sync", (data: { message: number[] }) => {
+      console.log(
+        "[PusherProvider] Received sync message, length:",
+        data.message.length
+      );
       this.handleMessage(new Uint8Array(data.message));
     });
 
     // Listen for awareness updates
     this.channel.bind("client-awareness", (data: { message: number[] }) => {
+      console.log("[PusherProvider] Received awareness update");
       this.handleAwarenessMessage(new Uint8Array(data.message));
     });
 
@@ -87,6 +117,7 @@ export class PusherProvider {
   }
 
   private broadcastState() {
+    console.log("[PusherProvider] Broadcasting full state");
     // Send our full state
     const encoder = encoding.createEncoder();
     encoding.writeVarUint(encoder, MESSAGE_SYNC);
@@ -94,6 +125,10 @@ export class PusherProvider {
     this.broadcastMessage(encoding.toUint8Array(encoder));
 
     // Also broadcast awareness
+    this.broadcastAwarenessState();
+  }
+
+  private broadcastAwarenessState() {
     const awarenessEncoder = encoding.createEncoder();
     encoding.writeVarUint(awarenessEncoder, MESSAGE_AWARENESS);
     encoding.writeVarUint8Array(
@@ -122,7 +157,10 @@ export class PusherProvider {
       );
 
       if (syncMessageType === syncProtocol.messageYjsSyncStep2) {
+        console.log("[PusherProvider] Sync completed (Step 2)");
         this.synced = true;
+      } else if (syncMessageType === syncProtocol.messageYjsSyncStep1) {
+        console.log("[PusherProvider] Sync Step 1 received");
       }
 
       if (encoding.length(encoder) > 1) {
@@ -147,6 +185,7 @@ export class PusherProvider {
   private handleDocUpdate = (update: Uint8Array, origin: unknown) => {
     if (origin === this) return; // Don't broadcast our own updates
 
+    console.log("[PusherProvider] Document updated, broadcasting...");
     const encoder = encoding.createEncoder();
     encoding.writeVarUint(encoder, MESSAGE_SYNC);
     syncProtocol.writeUpdate(encoder, update);
@@ -175,17 +214,33 @@ export class PusherProvider {
 
   private broadcastMessage(message: Uint8Array) {
     if (this.channel && this.connected) {
-      this.channel.trigger("client-sync", {
-        message: Array.from(message),
-      });
+      try {
+        this.channel.trigger("client-sync", {
+          message: Array.from(message),
+        });
+        console.log("[PusherProvider] Broadcasted sync message");
+      } catch (error) {
+        console.error("[PusherProvider] Error broadcasting sync:", error);
+      }
+    } else {
+      console.warn("[PusherProvider] Cannot broadcast - not connected");
     }
   }
 
   private broadcastAwareness(message: Uint8Array) {
     if (this.channel && this.connected) {
-      this.channel.trigger("client-awareness", {
-        message: Array.from(message),
-      });
+      try {
+        this.channel.trigger("client-awareness", {
+          message: Array.from(message),
+        });
+        console.log("[PusherProvider] Broadcasted awareness update");
+      } catch (error) {
+        console.error("[PusherProvider] Error broadcasting awareness:", error);
+      }
+    } else {
+      console.warn(
+        "[PusherProvider] Cannot broadcast awareness - not connected"
+      );
     }
   }
 

@@ -52,7 +52,7 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen bg-slate-950">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-800 bg-slate-900/50">
+      <aside className="w-64 border-r border-slate-800 bg-slate-900/50 flex flex-col">
         <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-6">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500">
             <Code2 className="h-4 w-4 text-white" />
@@ -65,7 +65,7 @@ export default async function AdminLayout({
           </div>
         </div>
 
-        <nav className="p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1">
           <Link
             href="/admin"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
@@ -96,7 +96,7 @@ export default async function AdminLayout({
           </Link>
         </nav>
 
-        <div className="absolute bottom-4 left-4 right-4">
+        <div className="p-4 border-t border-slate-800">
           <Link
             href="/rooms"
             className="flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-2 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"

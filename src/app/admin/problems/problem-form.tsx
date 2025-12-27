@@ -73,12 +73,16 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
   // Form state
   const [title, setTitle] = useState(initialData?.title || "");
   const [slug, setSlug] = useState(initialData?.slug || "");
-  const [description, setDescription] = useState(initialData?.description || "");
+  const [description, setDescription] = useState(
+    initialData?.description || ""
+  );
   const [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">(
     initialData?.difficulty || "EASY"
   );
   const [testCases, setTestCases] = useState<TestCase[]>(
-    initialData?.testCases || [{ input: "", expectedOutput: "", isHidden: false }]
+    initialData?.testCases || [
+      { input: "", expectedOutput: "", isHidden: false },
+    ]
   );
   const [starterCode, setStarterCode] = useState<StarterCode>(
     initialData?.starterCode || DEFAULT_STARTER_CODE
@@ -87,7 +91,9 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
     initialData?.constraints || [""]
   );
   const [hints, setHints] = useState<string[]>(initialData?.hints || [""]);
-  const [isPublished, setIsPublished] = useState(initialData?.isPublished || false);
+  const [isPublished, setIsPublished] = useState(
+    initialData?.isPublished || false
+  );
 
   // Auto-generate slug from title
   const handleTitleChange = (value: string) => {
@@ -105,14 +111,21 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
 
   // Test case management
   const addTestCase = () => {
-    setTestCases([...testCases, { input: "", expectedOutput: "", isHidden: false }]);
+    setTestCases([
+      ...testCases,
+      { input: "", expectedOutput: "", isHidden: false },
+    ]);
   };
 
   const removeTestCase = (index: number) => {
     setTestCases(testCases.filter((_, i) => i !== index));
   };
 
-  const updateTestCase = (index: number, field: keyof TestCase, value: string | boolean) => {
+  const updateTestCase = (
+    index: number,
+    field: keyof TestCase,
+    value: string | boolean
+  ) => {
     const updated = [...testCases];
     updated[index] = { ...updated[index], [field]: value };
     setTestCases(updated);
@@ -130,7 +143,8 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
 
   // Hints management
   const addHint = () => setHints([...hints, ""]);
-  const removeHint = (index: number) => setHints(hints.filter((_, i) => i !== index));
+  const removeHint = (index: number) =>
+    setHints(hints.filter((_, i) => i !== index));
   const updateHint = (index: number, value: string) => {
     const updated = [...hints];
     updated[index] = value;
@@ -220,14 +234,23 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label className="text-slate-300">Difficulty</Label>
-              <Select value={difficulty} onValueChange={(v) => setDifficulty(v as typeof difficulty)}>
+              <Select
+                value={difficulty}
+                onValueChange={(v) => setDifficulty(v as typeof difficulty)}
+              >
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="EASY" className="text-emerald-400">Easy</SelectItem>
-                  <SelectItem value="MEDIUM" className="text-amber-400">Medium</SelectItem>
-                  <SelectItem value="HARD" className="text-rose-400">Hard</SelectItem>
+                  <SelectItem value="EASY" className="text-emerald-400">
+                    Easy
+                  </SelectItem>
+                  <SelectItem value="MEDIUM" className="text-amber-400">
+                    Medium
+                  </SelectItem>
+                  <SelectItem value="HARD" className="text-rose-400">
+                    Hard
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -289,7 +312,9 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
                   <label className="flex items-center gap-2 text-sm text-slate-400">
                     <Switch
                       checked={testCase.isHidden}
-                      onCheckedChange={(v) => updateTestCase(index, "isHidden", v)}
+                      onCheckedChange={(v) =>
+                        updateTestCase(index, "isHidden", v)
+                      }
                     />
                     Hidden
                   </label>
@@ -311,17 +336,23 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
                   <Label className="text-slate-400 text-xs">Input</Label>
                   <Textarea
                     value={testCase.input}
-                    onChange={(e) => updateTestCase(index, "input", e.target.value)}
+                    onChange={(e) =>
+                      updateTestCase(index, "input", e.target.value)
+                    }
                     placeholder="[2,7,11,15]\n9"
                     rows={3}
                     className="bg-slate-900 border-slate-700 text-white font-mono text-sm"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-400 text-xs">Expected Output</Label>
+                  <Label className="text-slate-400 text-xs">
+                    Expected Output
+                  </Label>
                   <Textarea
                     value={testCase.expectedOutput}
-                    onChange={(e) => updateTestCase(index, "expectedOutput", e.target.value)}
+                    onChange={(e) =>
+                      updateTestCase(index, "expectedOutput", e.target.value)
+                    }
                     placeholder="[0,1]"
                     rows={3}
                     className="bg-slate-900 border-slate-700 text-white font-mono text-sm"
@@ -403,12 +434,7 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
         <Card className="border-slate-800 bg-slate-900/50">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-white">Hints</CardTitle>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={addHint}
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={addHint}>
               <Plus className="h-4 w-4" />
             </Button>
           </CardHeader>
@@ -439,12 +465,12 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
       </div>
 
       {/* Submit */}
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-end gap-4 pb-8">
         <Button
           type="button"
           variant="outline"
           onClick={() => router.back()}
-          className="border-slate-700 bg-slate-800"
+          className="border-slate-700 bg-slate-800 hover:bg-slate-700/80 text-white"
         >
           Cancel
         </Button>
@@ -464,4 +490,3 @@ export function ProblemForm({ initialData }: ProblemFormProps) {
     </form>
   );
 }
-
