@@ -80,12 +80,21 @@ export function CollaborativeEditor({
         const shouldInitialize = !hasContent && defaultValue;
 
         if (shouldInitialize) {
-          console.log("[CollaborativeEditor] Initializing with default value (length:", defaultValue.length, ")");
+          console.log(
+            "[CollaborativeEditor] Initializing with default value (length:",
+            defaultValue.length,
+            ")"
+          );
           yText.insert(0, defaultValue);
         } else if (hasContent) {
-          console.log("[CollaborativeEditor] Using existing Y.js content, length:", yText.length);
+          console.log(
+            "[CollaborativeEditor] Using existing Y.js content, length:",
+            yText.length
+          );
         } else {
-          console.log("[CollaborativeEditor] Document is empty, no default value provided");
+          console.log(
+            "[CollaborativeEditor] Document is empty, no default value provided"
+          );
         }
       };
 
@@ -94,7 +103,9 @@ export function CollaborativeEditor({
         checkAndInitialize();
       } else {
         // Wait up to 1 second for sync before initializing with default
-        console.log("[CollaborativeEditor] Waiting for sync before initialization...");
+        console.log(
+          "[CollaborativeEditor] Waiting for sync before initialization..."
+        );
         setTimeout(checkAndInitialize, 1000);
       }
 

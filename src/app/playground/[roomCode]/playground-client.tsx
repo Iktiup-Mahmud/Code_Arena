@@ -19,7 +19,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { leaveRoom, updateRoomProblem, updateRoomCode } from "@/lib/actions/rooms";
+import {
+  leaveRoom,
+  updateRoomProblem,
+  updateRoomCode,
+} from "@/lib/actions/rooms";
 import { createSubmission, runCode } from "@/lib/actions/submissions";
 import {
   Play,
@@ -116,7 +120,7 @@ function PlaygroundInner({
   user,
 }: PlaygroundClientProps) {
   const router = useRouter();
-  const { doc, awareness, isConnected, setCurrentUser } = useRoom();
+  const { doc, awareness, isConnected, isSynced, setCurrentUser } = useRoom();
   const [language, setLanguage] = useState(room.language);
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -128,6 +132,7 @@ function PlaygroundInner({
     useState<SubmissionResult | null>(null);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [isChangingProblem, setIsChangingProblem] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Ref to get current code from editor
   const currentCodeRef = useRef<string>("");
@@ -147,13 +152,16 @@ function PlaygroundInner({
   const saveCodeToDatabase = useCallback(
     async (code: string) => {
       if (code === lastSavedCodeRef.current) return;
-      
+
+      setIsSaving(true);
       try {
         await updateRoomCode(room.id, code);
         lastSavedCodeRef.current = code;
         console.log("[Playground] Code saved to database");
       } catch (error) {
         console.error("[Playground] Failed to save code:", error);
+      } finally {
+        setIsSaving(false);
       }
     },
     [room.id]
@@ -163,7 +171,10 @@ function PlaygroundInner({
   useEffect(() => {
     return () => {
       // Save on unmount
-      if (currentCodeRef.current && currentCodeRef.current !== lastSavedCodeRef.current) {
+      if (
+        currentCodeRef.current &&
+        currentCodeRef.current !== lastSavedCodeRef.current
+      ) {
         saveCodeToDatabase(currentCodeRef.current);
       }
     };
@@ -202,18 +213,21 @@ function PlaygroundInner({
     }
   };
 
-  const handleCodeChange = useCallback((code: string) => {
-    currentCodeRef.current = code;
-    
-    // Debounce save to database (save after 2 seconds of no changes)
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    saveTimeoutRef.current = setTimeout(() => {
-      saveCodeToDatabase(code);
-    }, 2000);
-  }, [saveCodeToDatabase]);
+  const handleCodeChange = useCallback(
+    (code: string) => {
+      currentCodeRef.current = code;
+
+      // Debounce save to database (save after 2 seconds of no changes)
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = setTimeout(() => {
+        saveCodeToDatabase(code);
+      }, 2000);
+    },
+    [saveCodeToDatabase]
+  );
 
   // Run code against custom input
   const handleRun = async () => {
@@ -352,6 +366,14 @@ function PlaygroundInner({
               {isConnected ? "Connected" : "Reconnecting..."}
             </span>
           </div>
+
+          {/* Save Status Indicator */}
+          {isSaving && (
+            <div className="flex items-center gap-2 rounded-lg border border-slate-700/30 bg-slate-800/50 px-3 py-1.5">
+              <Loader2 className="h-3 w-3 animate-spin text-blue-400" />
+              <span className="text-xs text-slate-400">Saving...</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -482,6 +504,7 @@ function PlaygroundInner({
               userName={user.name}
               defaultValue={getStarterCode()}
               onChange={handleCodeChange}
+              isSynced={isSynced}
             />
           </div>
 

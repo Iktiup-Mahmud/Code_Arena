@@ -71,17 +71,8 @@ export class PusherProvider {
       const states = this.awareness.getStates();
       states.forEach((state, clientId) => {
         if (state.user?.id === member.id) {
-          // Remove awareness for that client
-          const encoder = encoding.createEncoder();
-          encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
-          encoding.writeVarUint8Array(
-            encoder,
-            awarenessProtocol.encodeAwarenessUpdate(
-              this.awareness,
-              [clientId],
-              []
-            )
-          );
+          // Remove awareness for that client by setting it to null
+          this.awareness.setLocalStateField("user", null);
         }
       });
     });

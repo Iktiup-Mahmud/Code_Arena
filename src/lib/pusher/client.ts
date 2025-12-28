@@ -15,6 +15,7 @@ export function getPusherClient(): PusherClient {
         // Enable client events for real-time collaboration
         channelAuthorization: {
           endpoint: "/api/pusher/auth",
+          transport: "ajax",
         },
       }
     );
@@ -28,7 +29,7 @@ export function getPusherClient(): PusherClient {
       console.log("[Pusher] Disconnected");
     });
 
-    pusherClientInstance.connection.bind("error", (err: any) => {
+    pusherClientInstance.connection.bind("error", (err: unknown) => {
       console.error("[Pusher] Connection error:", err);
     });
   }
