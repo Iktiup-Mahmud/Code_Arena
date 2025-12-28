@@ -50,12 +50,17 @@ export function useRoom() {
 
 interface RoomProviderProps {
   roomId: string;
+  problemId?: string | null; // Scope collaboration to specific problem
   children: ReactNode;
 }
 
-export function RoomProvider({ roomId, children }: RoomProviderProps) {
-  const [doc] = useState(() => new Y.Doc());
-  const [awareness] = useState(() => new Awareness(doc));
+export function RoomProvider({
+  roomId,
+  problemId,
+  children,
+}: RoomProviderProps) {
+  const [doc, setDoc] = useState(() => new Y.Doc());
+  const [awareness, setAwareness] = useState(() => new Awareness(doc));
   const [provider, setProvider] = useState<PusherProvider | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSynced, setIsSynced] = useState(false);
@@ -64,6 +69,8 @@ export function RoomProvider({ roomId, children }: RoomProviderProps) {
 
   // Track connected users from awareness
   useEffect(() => {
+    if (!awareness) return;
+
     const updateUsers = () => {
       const users: User[] = [];
       awareness.getStates().forEach((state) => {
@@ -82,15 +89,29 @@ export function RoomProvider({ roomId, children }: RoomProviderProps) {
     };
   }, [awareness]);
 
-  // Initialize provider
+  // Initialize provider - recreate when problem changes
   useEffect(() => {
+    console.log(
+      "[RoomProvider] Initializing for room:",
+      roomId,
+      "problem:",
+      problemId
+    );
+
+    // Create new Y.js doc and awareness for this problem
+    const newDoc = new Y.Doc();
+    const newAwareness = new Awareness(newDoc);
+    setDoc(newDoc);
+    setAwareness(newAwareness);
+
     const pusher = getPusherClient();
 
     const newProvider = new PusherProvider({
       roomId,
-      doc,
+      problemId,
+      doc: newDoc,
       pusher,
-      awareness,
+      awareness: newAwareness,
     });
 
     setProvider(newProvider);
@@ -104,9 +125,10 @@ export function RoomProvider({ roomId, children }: RoomProviderProps) {
     return () => {
       clearInterval(checkStatus);
       newProvider.destroy();
+      newDoc.destroy();
       // Don't disconnect pusher globally - other components might use it
     };
-  }, [roomId, doc, awareness]);
+  }, [roomId, problemId]);
 
   // Update awareness when current user changes
   useEffect(() => {

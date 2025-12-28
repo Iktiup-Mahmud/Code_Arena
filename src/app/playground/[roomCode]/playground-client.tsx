@@ -530,7 +530,7 @@ function PlaygroundInner({
 // Main export with provider wrapper
 export function PlaygroundClient(props: PlaygroundClientProps) {
   return (
-    <RoomProvider roomId={props.room.id}>
+    <RoomProvider roomId={props.room.id} problemId={props.problem?.id}>
       <PlaygroundInner {...props} />
     </RoomProvider>
   );

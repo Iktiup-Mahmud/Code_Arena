@@ -13,6 +13,7 @@ const MESSAGE_AWARENESS = 1;
 
 export interface PusherProviderOptions {
   roomId: string;
+  problemId?: string | null; // Optional problem ID for scoping
   doc: Y.Doc;
   pusher: PusherClient;
   awareness?: Awareness;
@@ -22,6 +23,7 @@ export class PusherProvider {
   public doc: Y.Doc;
   public awareness: Awareness;
   public roomId: string;
+  public problemId: string | null;
 
   private pusher: PusherClient;
   private channel: PresenceChannel | null = null;
@@ -31,6 +33,7 @@ export class PusherProvider {
   constructor(options: PusherProviderOptions) {
     this.doc = options.doc;
     this.roomId = options.roomId;
+    this.problemId = options.problemId || null;
     this.pusher = options.pusher;
     this.awareness = options.awareness || new Awareness(this.doc);
 
@@ -38,7 +41,11 @@ export class PusherProvider {
   }
 
   private connect() {
-    const channelName = `presence-room-${this.roomId}`;
+    // Scope channel to room + problem for isolated collaboration
+    const channelSuffix = this.problemId
+      ? `problem-${this.problemId}`
+      : "sandbox";
+    const channelName = `presence-room-${this.roomId}-${channelSuffix}`;
     console.log(`[PusherProvider] Connecting to channel: ${channelName}`);
 
     this.channel = this.pusher.subscribe(channelName) as PresenceChannel;
