@@ -9,6 +9,12 @@ import {
   ArrowRight,
   Sparkles,
   Terminal,
+  Shield,
+  Clock,
+  CheckCircle2,
+  Play,
+  BookOpen,
+  Target,
 } from "lucide-react";
 
 export default async function HomePage() {
@@ -44,7 +50,10 @@ export default async function HomePage() {
             ) : (
               <>
                 <Link href="/sign-in">
-                  <Button variant="ghost" className="text-slate-300 hover:text-white">
+                  <Button
+                    variant="ghost"
+                    className="text-slate-300 hover:text-white"
+                  >
                     Sign In
                   </Button>
                 </Link>
@@ -70,14 +79,14 @@ export default async function HomePage() {
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-5 leading-tight">
             Code Together,{" "}
             <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
               Grow Together
             </span>
           </h1>
 
-          <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
+          <p className="text-lg text-slate-400 mb-8 max-w-2xl mx-auto">
             Practice coding challenges with friends in real-time. Share your
             screen, sync your code, and level up your skills together.
           </p>
@@ -86,18 +95,18 @@ export default async function HomePage() {
             <Link href={userId ? "/rooms" : "/sign-up"}>
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-lg px-8"
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-base px-7"
               >
                 Start Coding
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
             <Button
               size="lg"
               variant="outline"
-              className="border-slate-700 bg-slate-900/50 text-white hover:bg-slate-800 text-lg px-8"
+              className="border-slate-700 bg-slate-900/50 text-white hover:bg-slate-800 text-base px-7"
             >
-              <Terminal className="mr-2 h-5 w-5" />
+              <Terminal className="mr-2 h-4 w-4" />
               View Demo
             </Button>
           </div>
@@ -124,9 +133,7 @@ export default async function HomePage() {
                 <code>
                   <span className="text-slate-500">{"// "}</span>
                   <span className="text-emerald-400">Alice</span>
-                  <span className="text-slate-500">
-                    {" and "}
-                  </span>
+                  <span className="text-slate-500">{" and "}</span>
                   <span className="text-cyan-400">Bob</span>
                   <span className="text-slate-500">
                     {" are coding together..."}
@@ -231,11 +238,11 @@ export default async function HomePage() {
       {/* Features Section */}
       <section className="relative z-10 border-t border-slate-800 bg-slate-900/30">
         <div className="container mx-auto px-4 py-24">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
               Everything you need to practice
             </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
+            <p className="text-sm text-slate-400 max-w-2xl mx-auto">
               Built for developers who want to level up their coding skills
               together
             </p>
@@ -247,10 +254,10 @@ export default async function HomePage() {
               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10">
                 <Users className="h-6 w-6 text-emerald-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <h3 className="text-base font-semibold text-white mb-2">
                 Real-time Collaboration
               </h3>
-              <p className="text-slate-400 text-sm">
+              <p className="text-slate-400 text-xs">
                 See your teammates&apos; cursors and edits in real-time. No lag,
                 no conflicts, just seamless coding together.
               </p>
@@ -261,10 +268,10 @@ export default async function HomePage() {
               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
                 <Zap className="h-6 w-6 text-cyan-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <h3 className="text-base font-semibold text-white mb-2">
                 Instant Execution
               </h3>
-              <p className="text-slate-400 text-sm">
+              <p className="text-slate-400 text-xs">
                 Run your code against test cases instantly. Support for
                 JavaScript, Python, Java, C++, and more.
               </p>
@@ -275,10 +282,10 @@ export default async function HomePage() {
               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-violet-500/10">
                 <Trophy className="h-6 w-6 text-violet-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <h3 className="text-base font-semibold text-white mb-2">
                 Curated Problems
               </h3>
-              <p className="text-slate-400 text-sm">
+              <p className="text-slate-400 text-xs">
                 Practice with hand-picked problems ranging from easy to hard.
                 Perfect for interview prep.
               </p>
@@ -287,23 +294,191 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* How It Works Section */}
+      <section className="relative z-10 border-t border-slate-800 bg-slate-950/50">
+        <div className="container mx-auto px-4 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              How It Works
+            </h2>
+            <p className="text-sm text-slate-400 max-w-2xl mx-auto">
+              Get started in three simple steps
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                <span className="text-xl font-bold text-emerald-400">1</span>
+              </div>
+              <h3 className="text-base font-semibold text-white mb-2">
+                Create a Room
+              </h3>
+              <p className="text-xs text-slate-400">
+                Set up a collaborative coding room with a unique code
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                <span className="text-xl font-bold text-cyan-400">2</span>
+              </div>
+              <h3 className="text-base font-semibold text-white mb-2">
+                Invite Friends
+              </h3>
+              <p className="text-xs text-slate-400">
+                Share the room code and start coding together in real-time
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-violet-500/10 border border-violet-500/20">
+                <span className="text-xl font-bold text-violet-400">3</span>
+              </div>
+              <h3 className="text-base font-semibold text-white mb-2">
+                Solve & Submit
+              </h3>
+              <p className="text-xs text-slate-400">
+                Write code together and submit to see instant results
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Problem Categories Section */}
+      <section className="relative z-10 border-t border-slate-800 bg-slate-900/30">
+        <div className="container mx-auto px-4 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Problem Categories
+            </h2>
+            <p className="text-sm text-slate-400 max-w-2xl mx-auto">
+              Master different types of coding challenges
+            </p>
+          </div>
+
+          <div className="max-w-5xl mx-auto grid md:grid-cols-4 gap-4">
+            <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 hover:border-emerald-500/30 transition-all">
+              <Target className="h-5 w-5 text-emerald-400 mb-2" />
+              <h3 className="text-sm font-semibold text-white mb-1">
+                Arrays & Strings
+              </h3>
+              <p className="text-xs text-slate-500">15+ problems</p>
+            </div>
+
+            <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 hover:border-cyan-500/30 transition-all">
+              <Target className="h-5 w-5 text-cyan-400 mb-2" />
+              <h3 className="text-sm font-semibold text-white mb-1">
+                Data Structures
+              </h3>
+              <p className="text-xs text-slate-500">12+ problems</p>
+            </div>
+
+            <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 hover:border-violet-500/30 transition-all">
+              <Target className="h-5 w-5 text-violet-400 mb-2" />
+              <h3 className="text-sm font-semibold text-white mb-1">
+                Algorithms
+              </h3>
+              <p className="text-xs text-slate-500">18+ problems</p>
+            </div>
+
+            <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 hover:border-pink-500/30 transition-all">
+              <Target className="h-5 w-5 text-pink-400 mb-2" />
+              <h3 className="text-sm font-semibold text-white mb-1">
+                Dynamic Programming
+              </h3>
+              <p className="text-xs text-slate-500">10+ problems</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us Section */}
+      <section className="relative z-10 border-t border-slate-800 bg-slate-950/50">
+        <div className="container mx-auto px-4 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Why Choose CodeArena
+            </h2>
+            <p className="text-sm text-slate-400 max-w-2xl mx-auto">
+              The best platform for collaborative coding practice
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+            <div className="flex gap-4 rounded-lg border border-slate-800 bg-slate-900/30 p-4">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  Free to Use
+                </h3>
+                <p className="text-xs text-slate-400">
+                  No credit card required. Start practicing immediately with
+                  unlimited sessions.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 rounded-lg border border-slate-800 bg-slate-900/30 p-4">
+              <CheckCircle2 className="h-5 w-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  Real-time Sync
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Experience zero-lag collaboration with our advanced
+                  synchronization technology.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 rounded-lg border border-slate-800 bg-slate-900/30 p-4">
+              <CheckCircle2 className="h-5 w-5 text-violet-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  Multi-language Support
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Code in JavaScript, Python, Java, C++, and more programming
+                  languages.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 rounded-lg border border-slate-800 bg-slate-900/30 p-4">
+              <CheckCircle2 className="h-5 w-5 text-pink-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  Instant Feedback
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Get immediate results with comprehensive test case execution
+                  and error handling.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="relative z-10 border-t border-slate-800">
-        <div className="container mx-auto px-4 py-24 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+        <div className="container mx-auto px-4 py-20 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
             Ready to code together?
           </h2>
-          <p className="text-slate-400 mb-8 max-w-xl mx-auto">
+          <p className="text-sm text-slate-400 mb-7 max-w-xl mx-auto">
             Join thousands of developers practicing and improving their skills
             in real-time collaborative sessions.
           </p>
           <Link href={userId ? "/rooms" : "/sign-up"}>
             <Button
               size="lg"
-              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-lg px-8"
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-base px-7"
             >
               Get Started Free
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
         </div>
@@ -314,12 +489,12 @@ export default async function HomePage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Code2 className="h-5 w-5 text-emerald-400" />
-              <span className="text-sm text-slate-500">
-                CodeArena © 2024
+              <Code2 className="h-4 w-4 text-emerald-400" />
+              <span className="text-xs text-slate-500">
+                CodeArena © {new Date().getFullYear()}
               </span>
             </div>
-            <p className="text-sm text-slate-600">
+            <p className="text-xs text-slate-600">
               Built with Next.js, Prisma & Yjs
             </p>
           </div>
